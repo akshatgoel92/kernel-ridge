@@ -1,6 +1,8 @@
 # Import packages
 import os
+import math
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
 
@@ -19,7 +21,7 @@ def get_basis(x, k):
     '''
     ------------------------
     Input: Dataset and degree
-    Output: Assignment data
+    Output: Polynomial basis features
     ------------------------
     '''
     grid = np.meshgrid(x, np.arange(k + 1)) 
@@ -29,8 +31,8 @@ def get_basis(x, k):
 def get_sol(phi_x, y):
     '''
     ------------------------
-    Input: Dataset and degree
-    Output: Assignment data
+    Input: Polynomial features
+    Output: Least squares solution
     ------------------------
     '''
     return np.linalg.inv(phi_x.T @ phi_x) @ phi_x.T @ y
@@ -39,8 +41,10 @@ def get_sol(phi_x, y):
 def get_predictions(phi_x, beta_hat):
     '''
     ------------------------
-    Input: Dataset and degree
-    Output: Assignment data
+    Input: 
+           1) Polynomial features
+           2) Least squares coefficients
+    Output: Predictions
     ------------------------
     '''
     return phi_x @ beta_hat
@@ -49,15 +53,46 @@ def get_predictions(phi_x, beta_hat):
 def get_mse(y, y_hat):
     '''
     ------------------------
+    Input: True values and predicted values
+    Output: Mean squared error
+    ------------------------
+    '''
+    return 1/max(y.shape)*np.sum(np.power(y-y_hat, 2))
+
+
+
+def get_final_results_df(results):
+    '''
+    ------------------------
+    Input: True values and predicted values
+    Output: Mean squared error
+    ------------------------
+    '''
+    mse = pd.DataFrame([result['mse'] for result in results], columns = ['MSE'])
+    mse['degree'] = [result['degree'] for result in results]
+    mse.set_index('degree', inplace = True)
+    
+    return(mse)
+
+
+def run_regression(k, x, y, loss_func):
+    '''
+    ------------------------
     Input: Dataset and degree
     Output: Assignment data
     ------------------------
-    '''
-    return np.sum(np.power(y-y_hat, 2))
+    ''' 
+    phi_x = get_basis(x, k)
+    beta_hat = get_sol(phi_x, y)
+    y_hat = get_predictions(phi_x, beta_hat)
+    
+    mse = loss_func(y, y_hat)
+    results = {'beta_hat': beta_hat, 'y_hat': y_hat, 'mse': mse, 'degree': k}
+    
+    return(results)
 
 
-
-def plot_results(path, title, k, results):
+def plot_results(path, title, k, results, x_lab = "X", y_lab="Y"):
     '''
     ------------------------
     Input: Dataset and degree
@@ -74,8 +109,8 @@ def plot_results(path, title, k, results):
         plt.plot(x_grid, y_grid[degree], label = str(degree))
     
     # Add annotations
-    plt.xlabel('X')
-    plt.ylabel('Y')
+    plt.xlabel(x_lab)
+    plt.ylabel(y_lab)
     plt.title(title)
     plt.legend()
     
@@ -87,44 +122,3 @@ def plot_results(path, title, k, results):
     # Display and save plot
     plt.show()
     plt.savefig(path)
-
-
-def run_regression(k, x, y, loss_func):
-    '''
-    ------------------------
-    Input: Dataset and degree
-    Output: Assignment data
-    ------------------------
-    ''' 
-    phi_x = get_basis(x, k)
-    beta_hat = get_sol(phi_x, y)
-    y_hat = get_predictions(phi_x, beta_hat)
-    
-    #Get loss and results 
-    mse = loss_func(y, y_hat)
-    results = {'beta_hat': beta_hat, 'y_hat': y_hat, 'mse': mse}
-    
-    return(results)
-
-
-def main(k):
-    '''
-    ------------------------
-    Input: Dataset and degree
-    Output: Assignment data
-    ------------------------
-    ''' 
-    title = 'Polynomial Basis Fits'
-    path = os.path.join('.', 'figs', '1_1.png')
-    
-    x, y = get_data()
-    results = [run_regression(degree, x, y, get_mse) for degree in range(k + 1)]
-    plot_results(path, title, k, results)
-    
-    return(results)
-
-
-
-if __name__ == '__main__':
-
-    results = main(k = 3)
