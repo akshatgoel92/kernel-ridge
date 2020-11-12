@@ -39,7 +39,6 @@ def get_data(n, min_x, max_x, sd):
     Output: 
     ---------------------
     '''
-    np.random.seed(1291239)
     x = np.random.uniform(min_x, max_x, n)
     
     y_true = get_sin_basis(x)
@@ -122,6 +121,7 @@ def plot_regression_predictions(path, title, start_k, end_k,
     if not add_data: 
         plt.legend(title="Basis dimension")
     
+    # Set the axes
     axes = plt.gca()
     axes.set_xlim([0,1])
     axes.set_ylim([-1.5,1.5])
@@ -166,20 +166,6 @@ def plot_regression_loss(losses, highest_k, path):
     plt.savefig(path)
 
 
-def get_testing_data(n, lower, upper, var):
-    '''
-    ---------------------
-    Input: Parameters needed for data
-    Output: output
-    ---------------------
-    '''
-    np.random.seed(1890)
-    x = np.random.uniform(lower, upper, n)
-    y_true = np.array([get_true_basis(example) for example in x])
-    y = np.array([get_noisy_basis(example, var) for example in x])
-    
-    return x, y_true, y
-
 
 def get_test_mse(x_test, y_test, results, k = 18):
     '''
@@ -197,18 +183,17 @@ def get_test_mse(x_test, y_test, results, k = 18):
     return(ln_mse_test)
 
 
-def execute_data_plots(x, y): 
+def execute_data_plots(x, y, path): 
     '''
     ---------------------
     Input: Parameters needed for data
     Output: output
     ---------------------
     '''
-    path = os.path.join(".", "figs", '1_2_data.png')
     plot_data(x, y, path)
 
 
-def execute_poly_plots(x, y, dims = [2, 5, 10, 12, 14, 18]):
+def execute_poly_plots(x, y, dims = [2, 5, 10, 12, 14, 18], path):
     '''
     ---------------------
     Input: Parameters needed for data
@@ -216,7 +201,7 @@ def execute_poly_plots(x, y, dims = [2, 5, 10, 12, 14, 18]):
     ---------------------
     '''
     title = "Polynomial basis regression results: k = {}"
-    path = os.path.join(".", "figs", '1_2_results_dim_{}.png')
+    
     
     for k in dims:
         fig_title = title.format(k)
@@ -225,16 +210,14 @@ def execute_poly_plots(x, y, dims = [2, 5, 10, 12, 14, 18]):
         plot_regression_predictions(fig_path, fig_title, k, k+1, results, x, y)
 
 
-def execute_train_loss_plots(x, y, start_dim, end_dim):
+def execute_train_loss_plots(x, y, start_dim, end_dim, path):
     '''
     ---------------------
     Input: Parameters needed for data
     Output: output
     ---------------------
     '''
-    path = os.path.join(".", "figs", "1_2_train_loss.png")
     dims = range(start_dim, end_dim + 1)
-    
     results = np.array([run_polynomial_regression(k, x, y) for k in dims])
     ln_mse = np.array([result['ln_mse'] for result in results])
     plot_regression_loss(ln_mse, end_dim, path)
@@ -242,26 +225,33 @@ def execute_train_loss_plots(x, y, start_dim, end_dim):
     return(results)
 
 
-def execute_test_loss_plots(x_test, y_test, results, end_dim):
+def execute_test_loss_plots(x_test, y_test, results, end_dim, path):
     '''
     ---------------------
     Input: Parameters needed for data
     Output: output
     ---------------------
     '''
-    path = os.path.join(".", "figs", '1_2_test_loss.png')
     ln_mse_test = get_test_mse(x_test, y_test, results)
     plot_regression_loss(ln_mse_test, end_dim, path)
     return(ln_mse_test)
 
 
-def main():
+def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'), 
+         path_poly_plot = os.path.join(".", "figs", '1_2_results_dim_{}.png'), 
+         path_train_loss = os.path.join(".", "figs", "1_2_train_loss.png"), 
+         path_test_loss = os.path.join(".", "figs", '1_2_test_loss.png'), 
+         n_runs = 1):
     '''
     ---------------------
     Input: Parameters needed for data
     Output: output
     ---------------------
     '''
+    
+    # Set the random seed to reproduce
+    np.random.seed(1291239)
+
     # Set parameters
     min_x = 0
     max_x = 1 
@@ -270,22 +260,39 @@ def main():
     n_test_samples = 1000
 
     # Store dimensions of regression basis functions
+    # Note that these are dimensions and not degrees
+    # Degree of polynomial = Dimension of polynomial - 1
     start_dim = 1
     end_dim = 18
 
-    # Get datasets
-    x, y_true, y_obs = get_data(n_train_samples, min_x, max_x, sigma)
-    x_test, y_test_true, y_test_obs = get_data(n_test_samples, min_x, max_x, sigma)
-    
-    # Make plots
-    execute_data_plots(x, y_obs)
-    execute_poly_plots(x, y_obs)
-    
+    if n_runs == 1:
+        
+        # Get dataset
+        x, y_true, y_obs = get_data(n_train_samples, min_x, max_x, sigma)
+        x_test, y_test_true, y_test_obs = get_data(n_test_samples, min_x, max_x, sigma)
 
-    results = execute_train_loss_plots(x, y_obs, start_dim, end_dim)
-    ln_mse_test = execute_test_loss_plots(x_test, y_test_obs, results, end_dim)
+        # Make plots
+        execute_data_plots(x, y_obs, path_data_plot)
+        execute_poly_plots(x, y_obs, path_poly_plot)
+
+        # Store plots
+        results = execute_train_loss_plots(x, y_obs, start_dim, end_dim, path_train_loss)
+        ln_mse_test = execute_test_loss_plots(x_test, y_test_obs, results, end_dim, path_test_loss)
+
+    else:
+        
+        results = []
+        for counter in range(n_runs)
+            
+            print("Doing the {}th run...".format(counter))
+            x, y_true, y_obs = get_data(n_train_samples, min_x, max_x, sigma)
+            x_test, y_test_true, y_test_obs = get_data(n_test_samples, min_x, max_x, sigma)
+            results_from_single_run = [run_polynomial_regression(k, x, y)]
+            results.append(result_from_single_run)
+
+    return(results)
 
 
 
 if __name__ == '__main__':
-    main()
+    results = main(n=1)
