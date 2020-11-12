@@ -22,6 +22,17 @@ def get_sin_basis(x):
     return y_true
 
 
+def add_noise(y_true, loc = 0, sd = 0.07):
+    '''
+    ---------------------
+    Input:
+    Output: 
+    ---------------------
+    '''
+    y_obs = y_true + np.random.normal(loc, sd, y_true.shape)
+    return(y_obs)
+
+
 def get_sin_features(x, k):
     '''
     ---------------------
@@ -29,8 +40,9 @@ def get_sin_features(x, k):
     Output: 
     ---------------------
     '''
-    grid = np.arange(1, k + 1)
-    return(np.sin(2*grid*math.pi))
+    dims = np.arange(1, k + 1)
+    grid = np.meshgrid(x, dims) 
+    return(np.sin(2*math.pi*grid[0]*grid[1]).T)
 
 
 def run_sin_regression(k, x, y):
@@ -54,17 +66,6 @@ def run_sin_regression(k, x, y):
     return(results)
 
 
-def add_noise(y_true, loc = 0, sd = 0.07):
-    '''
-    ---------------------
-    Input:
-    Output: 
-    ---------------------
-    '''
-    y_obs = y_true + np.random.normal(loc, sd, y_true.shape)
-    return(y_obs)
-
-
 def get_data(n, min_x, max_x, sd):
     '''
     ---------------------
@@ -78,6 +79,7 @@ def get_data(n, min_x, max_x, sd):
     y_obs = add_noise(y_true, sd = sd)
     
     return x, y_true, y_obs
+
 
 
 def plot_data(x, y_obs, path):
@@ -119,8 +121,8 @@ def plot_data(x, y_obs, path):
 
 
 def plot_regression_predictions(path, title, start_k, end_k, 
-                                results, x, y,  x_lab = "X", 
-                                y_lab="Y", add_data=True):
+                                results, x, y, get_basis,  
+                                x_lab = "X", y_lab="Y", add_data=True):
     '''
     ------------------------
     Input: Dataset and degree
@@ -136,7 +138,7 @@ def plot_regression_predictions(path, title, start_k, end_k,
     x_grid = np.linspace(-5, 5, 100000)
     
     # These iterate through orders/degrees [0 to k-1] using dimension
-    x_basis = [get_polynomial_basis(x_grid, dim) for dim in dims]
+    x_basis = [get_basis(x_grid, dim) for dim in dims]
     y_grid = [get_predictions(basis, result['beta_hat']) for basis, result in zip(x_basis, results)]
     
     # Plots
@@ -202,7 +204,7 @@ def plot_regression_loss(losses, highest_k, path):
     plt.show()
     
 
-def get_test_mse(x_test, y_test, results, k = 18):
+def get_test_mse(x_test, y_test, results, get_basis, k = 18):
     '''
     ---------------------
     Input: Parameters needed for data
@@ -210,7 +212,7 @@ def get_test_mse(x_test, y_test, results, k = 18):
     ---------------------
     '''
     # Get features
-    x_basis = [get_polynomial_basis(x_test, dim) for dim in range(1, k + 1)]
+    x_basis = [get_basis(x_test, dim) for dim in range(1, k + 1)]
     y_preds = [get_predictions(basis, results[deg]['beta_hat']) for basis, deg in zip(x_basis, range(k + 1))]
     mse_test = [get_mse(y_test, y_pred) for y_pred in y_preds]
     ln_mse_test = [get_ln_mse(mse) for mse in mse_test]
@@ -228,7 +230,7 @@ def execute_data_plots(x, y, path):
     plot_data(x, y, path)
 
 
-def execute_poly_plots(x, y, path, dims = [2, 5, 10, 12, 14, 18]):
+def execute_poly_plots(x, y, path, run_regression, get_basis, dims = [2, 5, 10, 12, 14, 18]):
     '''
     ---------------------
     Input: Parameters needed for data
@@ -241,11 +243,11 @@ def execute_poly_plots(x, y, path, dims = [2, 5, 10, 12, 14, 18]):
     for k in dims:
         fig_title = title.format(k)
         fig_path = path.format(k)
-        results = [run_polynomial_regression(k, x, y)]
-        plot_regression_predictions(fig_path, fig_title, k, k+1, results, x, y)
+        results = [run_regression(k, x, y)]
+        plot_regression_predictions(fig_path, fig_title, k, k+1, results, x, y, get_basis)
 
 
-def execute_train_loss_plots(x, y, start_dim, end_dim, path):
+def execute_train_loss_plots(x, y, start_dim, end_dim, path, run_regression):
     '''
     ---------------------
     Input: Parameters needed for data
@@ -253,21 +255,21 @@ def execute_train_loss_plots(x, y, start_dim, end_dim, path):
     ---------------------
     '''
     dims = range(start_dim, end_dim + 1)
-    results = np.array([run_polynomial_regression(k, x, y) for k in dims])
+    results = np.array([run_regression(k, x, y) for k in dims])
     ln_mse = np.array([result['ln_mse'] for result in results])
     plot_regression_loss(ln_mse, end_dim, path)
 
     return(results)
 
 
-def execute_test_loss_plots(x_test, y_test, results, end_dim, path):
+def execute_test_loss_plots(x_test, y_test, results, end_dim, path, get_basis):
     '''
     ---------------------
     Input: Parameters needed for data
     Output: output
     ---------------------
     '''
-    mse_test, ln_mse_test = get_test_mse(x_test, y_test, results)
+    mse_test, ln_mse_test = get_test_mse(x_test, y_test, results, get_basis)
     plot_regression_loss(ln_mse_test, end_dim, path)
     return(ln_mse_test)
 
@@ -278,6 +280,7 @@ def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'),
          path_test_loss = os.path.join(".", "figs", '1_2_test_loss.png'),
          path_train_loss_multiple = os.path.join(".", "figs", '1_2_train_loss_100_runs.png'),
          path_test_loss_multiple = os.path.join(".", "figs", '1_2_test_loss_100_runs.png'), 
+         basis = 'polynomial',
          n_runs = 1):
     '''
     ---------------------
@@ -302,6 +305,15 @@ def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'),
     start_dim = 1
     end_dim = 18
 
+    # Set the basis generator and regression function depending on the option passed
+    if basis == 'polynomial':
+        get_basis = get_polynomial_basis
+        run_regression = run_polynomial_regression
+    
+    elif basis == 'sin':
+        get_basis = get_sin_features
+        run_regression = run_sin_regression
+
     # This is for the initial single run
     if n_runs == 1:
         
@@ -311,14 +323,14 @@ def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'),
 
         # Make plots
         execute_data_plots(x, y_obs, path_data_plot)
-        execute_poly_plots(x, y_obs, path_poly_plot)
+        execute_poly_plots(x, y_obs, path_poly_plot, run_regression, get_basis)
 
         # Store plots
-        results = execute_train_loss_plots(x, y_obs, start_dim, end_dim, path_train_loss)
-        ln_mse_test = execute_test_loss_plots(x_test, y_test_obs, results, end_dim, path_test_loss)
+        results = execute_train_loss_plots(x, y_obs, start_dim, end_dim, path_train_loss, run_regression)
+        ln_mse_test = execute_test_loss_plots(x_test, y_test_obs, results, end_dim, path_test_loss, get_basis)
 
     # This is for multiple runs to return average MSE
-    else:
+    elif n_runs > 1:
         
         # Create list to store results
         results = []
@@ -335,11 +347,11 @@ def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'),
 
             # Store dimensions to iterate over and then run polynomial regressions
             dims = range(start_dim, end_dim + 1)
-            results_from_single_run = [run_polynomial_regression(k, x, y_obs) for k in dims]
+            results_from_single_run = [run_regression(k, x, y_obs) for k in dims]
 
             # Get results on test set
             # First create the testing features
-            mse_test, ln_mse_test = get_test_mse(x_test, y_test_obs, results_from_single_run)
+            mse_test, ln_mse_test = get_test_mse(x_test, y_test_obs, results_from_single_run, get_basis)
 
             # Append this to results
             for result, mse, ln_mse in zip(results_from_single_run, mse_test, ln_mse_test):
@@ -374,15 +386,17 @@ def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'),
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='List the content of a folder')
-    parser.add_argument('n_runs',
-                         type=int, 
-                         help='No. of runs..')
     
     parser.add_argument('basis',
                         type=str, 
                         help='Whether to use polynomial or sin basis...')
 
+    parser.add_argument('n_runs',
+                         type=int, 
+                         help='No. of runs..')
     
     args = parser.parse_args()
+    
+    basis = args.basis
     n_runs = args.n_runs
-    results = main(n_runs=n_runs)
+    results = main(basis=basis, n_runs=n_runs)
