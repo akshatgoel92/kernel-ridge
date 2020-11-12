@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from scripts.linear_regression import get_polynomial_basis, get_sol, get_predictions 
-from scripts.linear_regression import get_mse, get_ln_mse, run_polynomial_regression
+from src.linear_regression import get_polynomial_basis, get_sol, get_predictions 
+from src.linear_regression import get_mse, get_ln_mse, run_polynomial_regression
 
 
 def get_sin_basis(x): 
@@ -19,6 +19,14 @@ def get_sin_basis(x):
     '''
     y_true = np.power(np.sin(2*math.pi*x),2)
     return y_true
+
+
+def get_sin_features(x, k):
+    
+
+
+def run_sinusoid_regression(x, k):
+    pass
 
 
 def add_noise(y_true, loc = 0, sd = 0.07):
@@ -80,6 +88,7 @@ def plot_data(x, y_obs, path):
 
     
     # Display and save plot
+    plt.show()
     plt.savefig(path)
 
 
@@ -161,8 +170,8 @@ def plot_regression_loss(losses, highest_k, path):
     axes.set_xlim([0,20])
     axes.set_ylim([min(losses) - 0.1, max(losses) + 0.1])
 
-    
-    # Display and save plot
+    # Show plots as a check
+    plt.show()
     plt.savefig(path)
 
 
@@ -175,12 +184,12 @@ def get_test_mse(x_test, y_test, results, k = 18):
     ---------------------
     '''
     # Get features
-    x_basis = [get_polynomial_basis(x_test, degree) for degree in range(1, k + 1)]
+    x_basis = [get_polynomial_basis(x_test, dim) for dim in range(1, k + 1)]
     y_preds = [get_predictions(basis, results[deg]['beta_hat']) for basis, deg in zip(x_basis, range(k + 1))]
     mse_test = [get_mse(y_test, y_pred) for y_pred in y_preds]
     ln_mse_test = [get_ln_mse(mse) for mse in mse_test]
 
-    return(ln_mse_test)
+    return(mse_test, ln_mse_test)
 
 
 def execute_data_plots(x, y, path): 
@@ -193,7 +202,7 @@ def execute_data_plots(x, y, path):
     plot_data(x, y, path)
 
 
-def execute_poly_plots(x, y, dims = [2, 5, 10, 12, 14, 18], path):
+def execute_poly_plots(x, y, path, dims = [2, 5, 10, 12, 14, 18]):
     '''
     ---------------------
     Input: Parameters needed for data
@@ -232,7 +241,7 @@ def execute_test_loss_plots(x_test, y_test, results, end_dim, path):
     Output: output
     ---------------------
     '''
-    ln_mse_test = get_test_mse(x_test, y_test, results)
+    mse_test, ln_mse_test = get_test_mse(x_test, y_test, results)
     plot_regression_loss(ln_mse_test, end_dim, path)
     return(ln_mse_test)
 
@@ -240,7 +249,9 @@ def execute_test_loss_plots(x_test, y_test, results, end_dim, path):
 def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'), 
          path_poly_plot = os.path.join(".", "figs", '1_2_results_dim_{}.png'), 
          path_train_loss = os.path.join(".", "figs", "1_2_train_loss.png"), 
-         path_test_loss = os.path.join(".", "figs", '1_2_test_loss.png'), 
+         path_test_loss = os.path.join(".", "figs", '1_2_test_loss.png'),
+         path_train_loss_multiple = os.path.join(".", "figs", '1_2_train_loss_100_runs.png'),
+         path_test_loss_multiple = os.path.join(".", "figs", '1_2_test_loss_100_runs.png'), 
          n_runs = 1):
     '''
     ---------------------
@@ -265,6 +276,7 @@ def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'),
     start_dim = 1
     end_dim = 18
 
+    # This is for the initial single run
     if n_runs == 1:
         
         # Get dataset
@@ -279,20 +291,56 @@ def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'),
         results = execute_train_loss_plots(x, y_obs, start_dim, end_dim, path_train_loss)
         ln_mse_test = execute_test_loss_plots(x_test, y_test_obs, results, end_dim, path_test_loss)
 
+    # This is for multiple runs to return average MSE
     else:
         
+        # Create list to store results
         results = []
-        for counter in range(n_runs)
+        
+        # Call the process for the no. of runs input by the user
+        for counter in range(n_runs):
             
+            # Print progress
             print("Doing the {}th run...".format(counter))
+            
+            # Make new datasets
             x, y_true, y_obs = get_data(n_train_samples, min_x, max_x, sigma)
             x_test, y_test_true, y_test_obs = get_data(n_test_samples, min_x, max_x, sigma)
-            results_from_single_run = [run_polynomial_regression(k, x, y)]
-            results.append(result_from_single_run)
 
+            # Store dimensions to iterate over and then run polynomial regressions
+            dims = range(start_dim, end_dim + 1)
+            results_from_single_run = [run_polynomial_regression(k, x, y_obs) for k in dims]
+
+            # Get results on test set
+            # First create the testing features
+            mse_test, ln_mse_test = get_test_mse(x_test, y_test_obs, results_from_single_run)
+
+            # Append this to results
+            for result, mse, ln_mse in zip(results_from_single_run, mse_test, ln_mse_test):
+                result['mse_test'] = mse
+                result['ln_mse_test'] = ln_mse
+                
+            # Store results
+            results.append(results_from_single_run)
+
+        
+        # Store the average
+        mse = [np.mean(np.array([results[run][degree]['mse'] for run in range(n_runs)])) for degree in range(end_dim)]
+        mse_test = [np.mean(np.array([results[run][degree]['mse_test'] for run in range(n_runs)])) for degree in range(end_dim)]
+
+        # Take logs
+        ln_mse = np.log(mse)
+        ln_mse_test = np.log(mse_test)
+
+        # Now make plots 
+        plot_regression_loss(ln_mse, end_dim, path_train_loss_multiple)
+        plot_regression_loss(ln_mse_test, end_dim, path_test_loss_multiple)
+
+
+    # Return results
     return(results)
 
 
 
 if __name__ == '__main__':
-    results = main(n=1)
+    results = main(n_runs=100)
