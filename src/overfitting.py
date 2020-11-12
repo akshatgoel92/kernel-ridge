@@ -23,11 +23,35 @@ def get_sin_basis(x):
 
 
 def get_sin_features(x, k):
-    pass
+    '''
+    ---------------------
+    Input:
+    Output: 
+    ---------------------
+    '''
+    grid = np.arange(1, k + 1)
+    return(np.sin(2*grid*math.pi))
 
 
-def run_sinusoid_regression(x, k):
-    pass
+def run_sin_regression(k, x, y):
+    '''
+    ------------------------
+    Input: Dataset and degree
+    Output: Assignment data
+    ------------------------
+    ''' 
+    phi_x = get_sin_features(x, k)
+    beta_hat = get_sol(phi_x, y)
+    y_hat = get_predictions(phi_x, beta_hat)
+    
+    mse = get_mse(y, y_hat)
+    ln_mse = get_ln_mse(mse)
+    
+    results = {'beta_hat': beta_hat, 'y_hat': y_hat, 
+               'mse': mse, 'ln_mse': ln_mse, 
+               'degree': k-1, 'dim': k}
+    
+    return(results)
 
 
 def add_noise(y_true, loc = 0, sd = 0.07):
