@@ -11,7 +11,7 @@ from src.linear_regression import get_polynomial_basis, get_sol, get_predictions
 from src.linear_regression import get_mse, get_ln_mse, run_polynomial_regression
 
 
-def get_sin_basis(x): 
+def get_true_function(x): 
     '''
     ---------------------
     Input:
@@ -33,7 +33,7 @@ def add_noise(y_true, loc = 0, sd = 0.07):
     return(y_obs)
 
 
-def get_sin_features(x, k):
+def get_sin_basis(x, k):
     '''
     ---------------------
     Input:
@@ -52,7 +52,7 @@ def run_sin_regression(k, x, y):
     Output: Assignment data
     ------------------------
     ''' 
-    phi_x = get_sin_features(x, k)
+    phi_x = get_sin_basis(x, k)
     beta_hat = get_sol(phi_x, y)
     y_hat = get_predictions(phi_x, beta_hat)
     
@@ -75,7 +75,7 @@ def get_data(n, min_x, max_x, sd):
     '''
     x = np.random.uniform(min_x, max_x, n)
     
-    y_true = get_sin_basis(x)
+    y_true = get_true_function(x)
     y_obs = add_noise(y_true, sd = sd)
     
     return x, y_true, y_obs
@@ -94,7 +94,7 @@ def plot_data(x, y_obs, path):
 
     # Make grids of x and y points to plot
     x_grid = np.linspace(0, 5, 1000000)
-    y_grid = np.array([get_sin_basis(example) for example in x_grid])
+    y_grid = np.array([get_true_function(example) for example in x_grid])
 
     # Title of the plot
     title = "True basis function vs. Noisy data points"
@@ -156,7 +156,7 @@ def plot_regression_predictions(path, title, start_k, end_k,
 
     # Add legend
     if not add_data: 
-        plt.legend(title="Basis dimension")
+        plt.legend(title="k")
     
     # Set the axes
     axes = plt.gca()
@@ -170,7 +170,7 @@ def plot_regression_predictions(path, title, start_k, end_k,
     
 
 
-def plot_regression_loss(losses, highest_k, path):
+def plot_regression_loss(losses, highest_k, path, title, xlab = "Basis dimension", ylab = "Log MSE"):
     '''
     ------------------------
     Input: Dataset and degree
@@ -180,9 +180,6 @@ def plot_regression_loss(losses, highest_k, path):
     # Close any currently open plots
     plt.clf()
 
-    # Title of the plot
-    title = "Polynomial degree vs. training error"
-
     # Make grids of x and y points to plot
     x_grid = np.arange(1, highest_k + 1)
     
@@ -190,8 +187,8 @@ def plot_regression_loss(losses, highest_k, path):
     plt.plot(x_grid, losses, "r.")
     
     # Add annotations
-    plt.xlabel('Polynomial degree')
-    plt.ylabel('Log MSE')
+    plt.xlabel(xlab)
+    plt.ylabel(ylab)
     plt.title(title)
     
     # Get current access
@@ -230,16 +227,13 @@ def execute_data_plots(x, y, path):
     plot_data(x, y, path)
 
 
-def execute_poly_plots(x, y, path, run_regression, get_basis, dims = [2, 5, 10, 12, 14, 18]):
+def execute_poly_plots(x, y, path, run_regression, get_basis, title, dims = [2, 5, 10, 12, 14, 18]):
     '''
     ---------------------
     Input: Parameters needed for data
     Output: output
     ---------------------
     '''
-    title = "Polynomial basis regression results: k = {}"
-    
-    
     for k in dims:
         fig_title = title.format(k)
         fig_path = path.format(k)
@@ -247,7 +241,7 @@ def execute_poly_plots(x, y, path, run_regression, get_basis, dims = [2, 5, 10, 
         plot_regression_predictions(fig_path, fig_title, k, k+1, results, x, y, get_basis)
 
 
-def execute_train_loss_plots(x, y, start_dim, end_dim, path, run_regression):
+def execute_train_loss_plots(x, y, start_dim, end_dim, path, run_regression, title):
     '''
     ---------------------
     Input: Parameters needed for data
@@ -257,12 +251,12 @@ def execute_train_loss_plots(x, y, start_dim, end_dim, path, run_regression):
     dims = range(start_dim, end_dim + 1)
     results = np.array([run_regression(k, x, y) for k in dims])
     ln_mse = np.array([result['ln_mse'] for result in results])
-    plot_regression_loss(ln_mse, end_dim, path)
+    plot_regression_loss(ln_mse, end_dim, path, title)
 
     return(results)
 
 
-def execute_test_loss_plots(x_test, y_test, results, end_dim, path, get_basis):
+def execute_test_loss_plots(x_test, y_test, results, end_dim, path, get_basis, title):
     '''
     ---------------------
     Input: Parameters needed for data
@@ -270,18 +264,18 @@ def execute_test_loss_plots(x_test, y_test, results, end_dim, path, get_basis):
     ---------------------
     '''
     mse_test, ln_mse_test = get_test_mse(x_test, y_test, results, get_basis)
-    plot_regression_loss(ln_mse_test, end_dim, path)
+    plot_regression_loss(ln_mse_test, end_dim, path, title)
     return(ln_mse_test)
 
 
-def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'), 
-         path_poly_plot = os.path.join(".", "figs", '1_2_results_dim_{}.png'), 
-         path_train_loss = os.path.join(".", "figs", "1_2_train_loss.png"), 
-         path_test_loss = os.path.join(".", "figs", '1_2_test_loss.png'),
-         path_train_loss_multiple = os.path.join(".", "figs", '1_2_train_loss_100_runs.png'),
-         path_test_loss_multiple = os.path.join(".", "figs", '1_2_test_loss_100_runs.png'), 
-         basis = 'polynomial',
-         n_runs = 1):
+def main(basis = 'polynomial',
+         n_runs = 1,
+         path_data_plot =  os.path.join(".", "figs", '1_2_data.png'), 
+         path_poly_plot = os.path.join(".", "figs", '1_2_results_dim_{}_{}.png'), 
+         path_train_loss = os.path.join(".", "figs", "1_2_train_loss_{}.png"), 
+         path_test_loss = os.path.join(".", "figs", '1_2_test_loss_{}.png'),
+         path_train_loss_multiple = os.path.join(".", "figs", '1_2_train_loss_100_runs_{}.png'),
+         path_test_loss_multiple = os.path.join(".", "figs", '1_2_test_loss_100_runs_{}.png')):
     '''
     ---------------------
     Input: Parameters needed for data
@@ -305,13 +299,20 @@ def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'),
     start_dim = 1
     end_dim = 18
 
+    # Insert basis name into file paths
+    path_poly_plot = path_poly_plot.format({}, basis) 
+    path_train_loss = path_train_loss.format(basis)
+    path_test_loss = path_test_loss.format(basis)
+    path_train_loss_multiple = path_train_loss_multiple.format(basis)
+    path_test_loss_multiple = path_test_loss_multiple.format(basis)
+
     # Set the basis generator and regression function depending on the option passed
     if basis == 'polynomial':
         get_basis = get_polynomial_basis
         run_regression = run_polynomial_regression
     
     elif basis == 'sin':
-        get_basis = get_sin_features
+        get_basis = get_sin_basis
         run_regression = run_sin_regression
 
     # This is for the initial single run
@@ -323,11 +324,15 @@ def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'),
 
         # Make plots
         execute_data_plots(x, y_obs, path_data_plot)
-        execute_poly_plots(x, y_obs, path_poly_plot, run_regression, get_basis)
+        execute_poly_plots(x, y_obs, path_poly_plot, run_regression, get_basis, 
+                           title = "{} basis regression results: k = {}".format(basis.title(), {}))
 
-        # Store plots
-        results = execute_train_loss_plots(x, y_obs, start_dim, end_dim, path_train_loss, run_regression)
-        ln_mse_test = execute_test_loss_plots(x_test, y_test_obs, results, end_dim, path_test_loss, get_basis)
+        # Store results
+        results = execute_train_loss_plots(x, y_obs, start_dim, end_dim, path_train_loss, run_regression, 
+                                           title = "{} Basis Train Error".format(basis.title()))
+        
+        ln_mse_test = execute_test_loss_plots(x_test, y_test_obs, results, end_dim, path_test_loss, get_basis, 
+                                              title = "{} Basis Test Error".format(basis.title()))
 
     # This is for multiple runs to return average MSE
     elif n_runs > 1:
@@ -374,8 +379,8 @@ def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'),
         ln_mse_test = np.log(mse_test)
 
         # Now make plots 
-        plot_regression_loss(ln_mse, end_dim, path_train_loss_multiple)
-        plot_regression_loss(ln_mse_test, end_dim, path_test_loss_multiple)
+        plot_regression_loss(ln_mse, end_dim, path_train_loss_multiple, title = "{} Basis Train Error".format(basis.title()))
+        plot_regression_loss(ln_mse_test, end_dim, path_test_loss_multiple, title = "{} Basis Test Error".format(basis.title()))
 
 
     # Return results
