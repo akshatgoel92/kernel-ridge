@@ -8,7 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from src.linear_regression import get_polynomial_basis, get_sol, get_predictions 
-from src.linear_regression import get_mse, get_ln_mse, run_polynomial_regression
+from src.linear_regression import get_mse, get_ln_mse, run_polynomial_regression, plot_regression_predictions
 
 
 def get_true_function(x): 
@@ -118,57 +118,6 @@ def plot_data(x, y_obs, path):
     plt.savefig(path)
     plt.show()
     
-
-
-def plot_regression_predictions(path, title, start_k, end_k, 
-                                results, x, y, get_basis,  
-                                x_lab = "X", y_lab="Y", add_data=True):
-    '''
-    ------------------------
-    Input: Dataset and degree
-    Output: Assignment data
-    ------------------------
-    ''' 
-    plt.clf()
-
-    # Create dimensions to iterate over
-    dims = range(start_k, end_k + 1)
-    
-    # Make grids for plot
-    x_grid = np.linspace(-5, 5, 100000)
-    
-    # These iterate through orders/degrees [0 to k-1] using dimension
-    x_basis = [get_basis(x_grid, dim) for dim in dims]
-    y_grid = [get_predictions(basis, result['beta_hat']) for basis, result in zip(x_basis, results)]
-    
-    # Plots
-    for i, y_pred in enumerate(y_grid):
-        plt.plot(x_grid, y_pred, label = str(i + start_k))
-
-    # Overlay the observed data if the add_data option is switched on is passed through
-    if add_data:
-        plt.plot(x, y, "r.")
-    
-    # Add annotations
-    plt.xlabel(x_lab)
-    plt.ylabel(y_lab)
-    plt.title(title)
-
-    # Add legend
-    if not add_data: 
-        plt.legend(title="k")
-    
-    # Set the axes
-    axes = plt.gca()
-    axes.set_xlim([0,1])
-    axes.set_ylim([-1.5,1.5])
-
-    
-    # Display and save plot
-    plt.savefig(path)
-    plt.show()
-    
-
 
 def plot_regression_loss(losses, highest_k, path, title, xlab = "Basis dimension", ylab = "Log MSE"):
     '''

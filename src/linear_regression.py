@@ -108,60 +108,80 @@ def get_final_results(results):
     return(mse)
 
 
-def plot_results(path, title, k, results, x_lab = "X", y_lab="Y"):
+def plot_regression_predictions(path, title, start_k, end_k, 
+                                results, x, y, get_basis,  
+                                x_lab = "X", y_lab="Y", add_data=True):
     '''
     ------------------------
     Input: Dataset and degree
     Output: Assignment data
     ------------------------
     ''' 
+    plt.clf()
+
+    # Create dimensions to iterate over
+    dims = range(start_k, end_k + 1)
+    
     # Make grids for plot
     x_grid = np.linspace(-5, 5, 100000)
     
     # These iterate through orders/degrees [0 to k-1] using dimension
-    x_basis = [get_polynomial_basis(x_grid, dim) for dim in range(1, k + 1)]
-    y_grid = [get_predictions(basis, results[dim-1]['beta_hat']) for basis, dim in zip(x_basis, range(1, k + 1))]
+    x_basis = [get_basis(x_grid, dim) for dim in dims]
+    y_grid = [get_predictions(basis, result['beta_hat']) for basis, result in zip(x_basis, results)]
     
     # Plots
-    # This plots iterate through the orders/degrees [0 to k-1]
-    for dim in range(1, k+1):
-        plt.plot(x_grid, y_grid[dim - 1], label = str(dim - 1))
+    for i, y_pred in enumerate(y_grid):
+        plt.plot(x_grid, y_pred, label = str(i + start_k))
+
+    # Overlay the observed data if the add_data option is switched on is passed through
+    # Set the axes
+    if add_data:
+        plt.plot(x, y, "r.")
+        axes = plt.gca()
+        axes.set_xlim([0,1])
+        axes.set_ylim([-1.5,1.5])
+
+    # Add legend
+    # Set the axes
+    if not add_data: 
+        plt.legend(title="k")
+        axes = plt.gca()
+        axes.set_xlim([0,5])
+        axes.set_ylim([-5,8])
+    
     
     # Add annotations
     plt.xlabel(x_lab)
     plt.ylabel(y_lab)
     plt.title(title)
-    plt.legend()
-    
-    axes = plt.gca()
-    axes.set_xlim([0,5])
-    axes.set_ylim([-5,8])
-
     
     # Display and save plot
-    plt.show()
     plt.savefig(path)
+    plt.show()
 
 
-def main(k):
+def main(start_k = 1, end_k = 4):
     '''
     ------------------------
     Input: Dataset and degree
     Output: Assignment data
     ------------------------
     ''' 
+    get_basis = get_polynomial_basis
+
     x, y = get_data()
-    results = [run_polynomial_regression(dim, x, y) for dim in range(1, k)]
+    results = [run_polynomial_regression(dim, x, y) for dim in range(start_k, end_k + 1)]
     
+    # For plot
     title = 'Polynomial Basis Fits'
-    path = os.path.join('.', '..', 'figs', '1_1.png')
+    path = os.path.join('.', 'figs', '1_1.png')
     
     df = get_final_results(results)
-    plot_results(path, title, k, results)
+    plot_regression_predictions(path, title, start_k, end_k, results, x, y, get_basis, add_data = False)
     
     return(results, df)
 
 
 
 if __name__ == '__main__':
-    main(k=5)
+    main()
