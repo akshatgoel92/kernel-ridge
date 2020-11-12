@@ -372,4 +372,17 @@ def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'),
 
 
 if __name__ == '__main__':
-    results = main(n_runs=1)
+
+    parser = argparse.ArgumentParser(description='List the content of a folder')
+    parser.add_argument('n_runs',
+                         type=int, 
+                         help='No. of runs..')
+    
+    parser.add_argument('basis',
+                        type=str, 
+                        help='Whether to use polynomial or sin basis...')
+
+    
+    args = parser.parse_args()
+    n_runs = args.n_runs
+    results = main(n_runs=n_runs)
