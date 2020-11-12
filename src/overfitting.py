@@ -22,7 +22,7 @@ def get_sin_basis(x):
 
 
 def get_sin_features(x, k):
-    
+    pass
 
 
 def run_sinusoid_regression(x, k):
@@ -343,4 +343,4 @@ def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'),
 
 
 if __name__ == '__main__':
-    results = main(n_runs=100)
+    results = main(n_runs=1)
