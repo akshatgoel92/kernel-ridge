@@ -2,6 +2,7 @@
 # Import packages
 import os
 import math
+import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -88,8 +89,9 @@ def plot_data(x, y_obs, path):
 
     
     # Display and save plot
-    plt.show()
     plt.savefig(path)
+    plt.show()
+    
 
 
 def plot_regression_predictions(path, title, start_k, end_k, 
@@ -137,8 +139,9 @@ def plot_regression_predictions(path, title, start_k, end_k,
 
     
     # Display and save plot
-    plt.show()
     plt.savefig(path)
+    plt.show()
+    
 
 
 def plot_regression_loss(losses, highest_k, path):
@@ -171,10 +174,9 @@ def plot_regression_loss(losses, highest_k, path):
     axes.set_ylim([min(losses) - 0.1, max(losses) + 0.1])
 
     # Show plots as a check
-    plt.show()
     plt.savefig(path)
-
-
+    plt.show()
+    
 
 def get_test_mse(x_test, y_test, results, k = 18):
     '''
@@ -325,8 +327,11 @@ def main(path_data_plot =  os.path.join(".", "figs", '1_2_data.png'),
 
         
         # Store the average
-        mse = [np.mean(np.array([results[run][degree]['mse'] for run in range(n_runs)])) for degree in range(end_dim)]
-        mse_test = [np.mean(np.array([results[run][degree]['mse_test'] for run in range(n_runs)])) for degree in range(end_dim)]
+        mse = [np.mean(np.array([results[run][degree]['mse'] for run in range(n_runs)])) 
+               for degree in range(end_dim)]
+        
+        mse_test = [np.mean(np.array([results[run][degree]['mse_test'] for run in range(n_runs)])) 
+                    for degree in range(end_dim)]
 
         # Take logs
         ln_mse = np.log(mse)
