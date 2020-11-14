@@ -144,6 +144,7 @@ def plot_regression_predictions(path, title, start_k, end_k,
     # Add legend
     # Set the axes
     if not add_data: 
+        plt.plot(x, y, "r.")
         plt.legend(title="k")
         axes = plt.gca()
         axes.set_xlim([0,5])
@@ -171,12 +172,14 @@ def main(start_k = 1, end_k = 4):
 
     x, y = get_data()
     results = [run_polynomial_regression(dim, x, y) for dim in range(start_k, end_k + 1)]
-    
+    print(results)
+
     # For plot
     title = 'Polynomial Basis Fits'
     path = os.path.join('.', 'figs', '1_1.png')
     
     df = get_final_results(results)
+    print(df)
     plot_regression_predictions(path, title, start_k, end_k, results, x, y, get_basis, add_data = False)
     
     return(results, df)
