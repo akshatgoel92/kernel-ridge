@@ -42,7 +42,7 @@ def get_sin_basis(x, k):
     '''
     dims = np.arange(1, k + 1)
     grid = np.meshgrid(x, dims) 
-    return(np.sin(2*math.pi*grid[0]*grid[1]).T)
+    return(np.sin(math.pi*grid[0]*grid[1]).T)
 
 
 def run_sin_regression(k, x, y):
