@@ -7,6 +7,17 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+'''
+---------------------------
+Description:
+This file contains code
+for Q 1  Please take
+note that the functions implemented
+in this file are re-used by overfitting.py
+for Q2 and Q3.
+--------------------------
+'''
+
 
 def get_data():
     '''

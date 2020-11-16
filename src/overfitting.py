@@ -11,6 +11,38 @@ import matplotlib.ticker as mticker
 from src.linear_regression import get_polynomial_basis, get_sol, get_predictions 
 from src.linear_regression import get_mse, get_ln_mse, run_polynomial_regression, plot_regression_predictions
 
+'''
+---------------------------
+Description:
+This file contains code
+for Q 2 and Q 3 of the
+assignment. Please take
+note of of the imports above.
+The broad way this code works
+is as follows:
+1) We pass around two main
+   references to functions: 
+   get_basis and run_regression.
+2) get_basis can refer to 
+   get_polynomial basis which
+   is the function we used in 
+   question 1 and is imported above
+   or it can refer to get_sin_basis
+   which is implemented below.
+3) Similarly run_regression can 
+   refer to run_polynomial_regression
+   from the previous question's 
+   linear_regression file or
+   it can refer to run_sin_regression
+   which is implemented below. 
+This will generate all the plots
+and results for Q2 and Q3. We implement
+command line arguments to run with either
+sin or polynomial bases and with a specific
+number of runs.
+--------------------------
+'''
+
 
 def get_true_function(x): 
     '''
