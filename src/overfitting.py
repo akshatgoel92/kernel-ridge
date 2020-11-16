@@ -96,15 +96,15 @@ def run_sin_regression(k, x, y):
 def get_data(n, min_x, max_x, sd):
     '''
     ---------------------
-    Input: n: no. of values to generate
-           min_x: minimum threshold for x
-           max_x: maximum threshold for x
-           sd: noise distribution standard deviation to 
+    Input: 1) n: no. of values to generate
+           2) min_x: minimum threshold for x
+           3) max_x: maximum threshold for x
+           4) sd: noise distribution standard deviation to 
                 add to y-values
-    Output: x: Generated x values from the uniform distribution
-            y_true: 'True y' values generated deterministically
+    Output: 1) x: Generated x values from the uniform distribution
+            2) y_true: 'True y' values generated deterministically
                     as a function of x
-            y_obs: Y-values with noise added
+            3) y_obs: Y-values with noise added
     ---------------------
     '''
     # Generate the x-values
@@ -197,16 +197,33 @@ def plot_regression_loss(losses, highest_k, path, title, xlab = "Basis dimension
 def get_test_mse(x_test, y_test, results, get_basis, k = 18):
     '''
     ------------------------
-    Input: X_test
-    iterate to, other misc. plot parameters
-    Output: Plot of regression losses by dimension of basis sent
+    Input: X_test, y_test, results, get_basis
+    Output: Test MSE, Log Test MSE
     to the specified path
+
+    This function will take
+    testing featurse and labels as 
+    inputs. It will also take a results
+    dictionary from training which will
+    contain the estimated coefficients.
+    It will then use the basis to calculate
+    the transformed x_test features and use
+    these coefficients to make predictions
+    for the test set. Then it will compare
+    these predictions to y_test and calculate
+    the MSE
     ------------------------
     '''
-    # Get features
+    # Get features: 
     x_basis = [get_basis(x_test, dim) for dim in range(1, k + 1)]
+
+    # Get predictions using coefficients from results
     y_preds = [get_predictions(basis, results[deg]['beta_hat']) for basis, deg in zip(x_basis, range(k + 1))]
+    
+    # Calculate the MSE on the test set
     mse_test = [get_mse(y_test, y_pred) for y_pred in y_preds]
+
+    # Calculate the log values of the MSE
     ln_mse_test = [get_ln_mse(mse) for mse in mse_test]
 
     return(mse_test, ln_mse_test)
@@ -215,8 +232,19 @@ def get_test_mse(x_test, y_test, results, get_basis, k = 18):
 def execute_data_plots(x, y, path): 
     '''
     ---------------------
-    Input: Parameters needed for data
-    Output: output
+    Input: x, y, path
+    Output: Plot of data saved 
+    at path
+
+    This takes in a set of 
+    features and a set of labels
+    and plots the dataset by calling
+    the plot_data function defined
+    above. Note that the plot_data function
+    superimposes the true function
+    from which the data has been 
+    generated onto these data
+    points.
     ---------------------
     '''
     plot_data(x, y, path)
@@ -225,8 +253,29 @@ def execute_data_plots(x, y, path):
 def execute_poly_plots(x, y, path, run_regression, get_basis, title, dims = [2, 5, 10, 12, 14, 18]):
     '''
     ---------------------
-    Input: Parameters needed for data
-    Output: output
+    Input: x: x features for training data
+           y: y values for training data
+           path: output path
+           run_regression: reference to which
+           regression function to use for fitting 
+           [sin vs polynomial]
+           dims = which dimensions to iterate over
+           Others: Misc. plot parameters
+    Output: Plot of fitted curve superimposed
+            on data superimposed on data points
+
+
+    This takes in a set of 
+    features and a set of labels,
+    gets the transformed features using
+    the user specified basis function [sin or polynomial] 
+    runs regressions based on the user
+    specification of which regression 
+    to run [sin or polynomial],
+    and then calls the plot_regression_predictions
+    function imported above from linear_regression.py 
+    to get and plot regression fits super-imposed 
+    over the data points using the estimated results.
     ---------------------
     '''
     for k in dims:
@@ -239,8 +288,25 @@ def execute_poly_plots(x, y, path, run_regression, get_basis, title, dims = [2, 
 def execute_train_loss_plots(x, y, start_dim, end_dim, path, run_regression, title):
     '''
     ---------------------
-    Input: Parameters needed for data
-    Output: output
+    Input: x: x features for training data
+           y: y values for training data
+           path: output path
+           run_regression: reference to which
+           end_dim: The largest dimension k for which to
+           make a plot
+           Others: Misc. plot parameters
+    Output: Plot of d
+
+    This takes in a set of 
+    features and a set of labels,
+    gets the transformed features using
+    the user specified basis function [sin or polynomial] 
+    runs regressions based on the user
+    specification of which regression 
+    to run [sin or polynomial],
+    and then calls the plot_regression_predictions
+    function above to get and plot_regression_predictions 
+    using the estimated results.
     ---------------------
     '''
     dims = range(start_dim, end_dim + 1)
@@ -274,7 +340,12 @@ def main(basis = 'polynomial',
     '''
     ---------------------
     This function runs the main loop for the question. 
-    Output: output
+    Input: basis: which basis function to use, can be
+                  either polynomial or sin
+           n_runs: how many iterations of training to do
+           Misc. paths: the destination paths for each figure
+    Output: Runs the entire script and generates plots for 
+            the overfitting subsection of the assignment
     ---------------------
     '''
     
@@ -385,11 +456,9 @@ def main(basis = 'polynomial',
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='List the content of a folder')
-    
     parser.add_argument('basis',
                         type=str, 
                         help='Whether to use polynomial or sin basis...')
-
     parser.add_argument('n_runs',
                          type=int, 
                          help='No. of runs..')

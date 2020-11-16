@@ -13,6 +13,9 @@ def get_data():
     ------------------------
     Input: None
     Output: Assignment data
+    This function generates
+    the assignment data for 
+    Q 1.1
     ------------------------
     '''
     return np.array([1, 2, 3, 4]), np.array([3, 2, 0, 5])  
@@ -25,6 +28,11 @@ def get_polynomial_basis(x, k):
     Output: Polynomial basis features
     Given a dimension this iterates
     through orders [0 to k-1]
+    It creates a grid of all 
+    combinations of training examples 
+    and dimensions and then returns
+    the polynomial basis values of dimension k 
+    using this grid
     ------------------------
     '''
     grid = np.meshgrid(x, np.arange(k)) 
@@ -36,6 +44,13 @@ def get_sol(X, Y):
     ------------------------
     Input: Polynomial features
     Output: Least squares solution
+    This calculates the analytical
+    solution for least squares given
+    X features and Y labels
+
+    This is reused by overfitting.py
+    for the overfitting section of the
+    assignment
     ------------------------
     '''
     return np.linalg.solve(X.T @ X, X.T @ Y)
@@ -45,8 +60,9 @@ def get_predictions(X, beta_hat):
     '''
     ------------------------
     Input: 
-           1) Polynomial features
-           2) Least squares coefficients
+           1) X: feature values for prediction points
+           2) beta_hat: Least squares coefficients to use
+                        for predictions
     Output: Predictions
     ------------------------
     '''
@@ -58,6 +74,11 @@ def get_mse(Y, Y_hat):
     ------------------------
     Input: True values and predicted values
     Output: Mean squared error
+
+    This function calculates the MSE
+    for all regressions  in 
+    both overfitting.py and for
+    this script.
     ------------------------
     '''
     return np.sum(np.power(Y-Y_hat, 2))/max(Y.shape)
@@ -66,8 +87,8 @@ def get_mse(Y, Y_hat):
 def get_ln_mse(mse):
     '''
     ------------------------
-    Input: Dataset and degree
-    Output: Assignment data
+    Input: Array of MSEs
+    Output: Array of logged MSEs
     ------------------------
     '''
     return np.log(mse)
@@ -76,8 +97,12 @@ def get_ln_mse(mse):
 def run_polynomial_regression(k, x, y):
     '''
     ------------------------
-    Input: Dataset and degree
-    Output: Assignment data
+    Input: k: Dimension of basis
+           x: Feature values
+           y: Labels
+    Output: Results from running
+    polynomial basis regression of
+    dimension k on x and y
     ------------------------
     ''' 
     phi_x = get_polynomial_basis(x, k)
@@ -97,8 +122,12 @@ def run_polynomial_regression(k, x, y):
 def get_final_results(results):
     '''
     ------------------------
-    Input: True values and predicted values
-    Output: Mean squared error
+    Input: Results dictionary
+    Output: Dataframe with two columns:
+    Degree and MSE
+    This is a convenience function
+    to display results in an easily 
+    readable way.
     ------------------------
     '''
     mse = pd.DataFrame([result['mse'] for result in results], columns = ['MSE'])
@@ -113,8 +142,19 @@ def plot_regression_predictions(path, title, start_k, end_k,
                                 x_lab = "X", y_lab="Y", add_data=True):
     '''
     ------------------------
-    Input: Dataset and degree
-    Output: Assignment data
+    Input: path: destination path for generated plots
+           start_k: dimensions to iterate over 
+           end_k: dimensions to iterate over
+           results: container for regression coefficients
+           to use for plotting fitted curves
+           get_basis: reference to either get_polynomial_basis
+                      or get_sin_basis to transform the x values
+                      appropriately before using them for prediction
+           Others: Misc. plot parameters
+    Output: Plots of fitted curves super-imposed over data points
+            saved at destination path
+    Note that this is used by overfitting.py to generate plots for
+    that subsection
     ------------------------
     ''' 
     plt.clf()
@@ -164,22 +204,34 @@ def plot_regression_predictions(path, title, start_k, end_k,
 def main(start_k = 1, end_k = 4):
     '''
     ------------------------
-    Input: Dataset and degree
-    Output: Assignment data
+    Input: start_k: Dimenstion to start
+           end_k: Dimension to end
+
+    This function runs this entire script for 
+    dimensions 1 to 4 to get results for Q1.
     ------------------------
     ''' 
+
+    # Set the get_basis function to the polynomial basis
+    # We are only using the polynomial basis in this question
     get_basis = get_polynomial_basis
 
+    # Consstruct data
     x, y = get_data()
+
+    # Run regressions
     results = [run_polynomial_regression(dim, x, y) for dim in range(start_k, end_k + 1)]
     print(results)
 
-    # For plot
+    # Set misc. plot parameters
     title = 'Polynomial Basis Fits'
     path = os.path.join('.', 'figs', '1_1.png')
     
+    # Get and print final results data-frame for easy reading
     df = get_final_results(results)
     print(df)
+
+    # Make plots needed for Q1.
     plot_regression_predictions(path, title, start_k, end_k, results, x, y, get_basis, add_data = False)
     
     return(results, df)
