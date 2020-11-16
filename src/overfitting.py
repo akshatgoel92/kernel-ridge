@@ -6,6 +6,7 @@ import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 
 from src.linear_regression import get_polynomial_basis, get_sol, get_predictions 
 from src.linear_regression import get_mse, get_ln_mse, run_polynomial_regression, plot_regression_predictions
@@ -13,10 +14,16 @@ from src.linear_regression import get_mse, get_ln_mse, run_polynomial_regression
 
 def get_true_function(x): 
     '''
-    ---------------------
-    Input:
-    Output: 
-    ---------------------
+    ---------------------------
+    Input: x values
+    Output: [sin 2 * pi * x]^2
+
+    This function transforms
+    the given x value determini-
+    stically into a y_value 
+    according to the reference
+    equation given in the question.
+    --------------------------
     '''
     y_true = np.power(np.sin(2*math.pi*x),2)
     return y_true
@@ -25,8 +32,14 @@ def get_true_function(x):
 def add_noise(y_true, loc = 0, sd = 0.07):
     '''
     ---------------------
-    Input:
-    Output: 
+    Input: 1) True y_values
+           2) noise distribution mean
+           3) noise distribution standard deviation
+    Output: True y_values + random noise
+
+    This function takes in 'true' y values that
+    are deterministically generated and adds 
+    noise to them according to the given parameters
     ---------------------
     '''
     y_obs = y_true + np.random.normal(loc, sd, y_true.shape)
@@ -36,8 +49,14 @@ def add_noise(y_true, loc = 0, sd = 0.07):
 def get_sin_basis(x, k):
     '''
     ---------------------
-    Input:
+    Input: 1) X-values
+           2) dimension of expected basis
     Output: 
+
+    This function takes in x values and
+    a user input for k: the dimension of
+    the expected basis function and returns
+    the basis function
     ---------------------
     '''
     dims = np.arange(1, k + 1)
@@ -47,11 +66,19 @@ def get_sin_basis(x, k):
 
 def run_sin_regression(k, x, y):
     '''
-    ------------------------
-    Input: Dataset and degree
-    Output: Assignment data
-    ------------------------
-    ''' 
+    ---------------------
+    Input: 1) x: X values
+           2) k: dimension of basis being used to
+           3) y: observed y values
+    Output: 
+
+    This function takes in x values and
+    y values as well as a user input for k: 
+    the dimension of the expected basis 
+    function and returns regression 
+    results from running y ~ sin_basis(x, k)
+    ---------------------
+    '''
     phi_x = get_sin_basis(x, k)
     beta_hat = get_sol(phi_x, y)
     y_hat = get_predictions(phi_x, beta_hat)
@@ -69,13 +96,24 @@ def run_sin_regression(k, x, y):
 def get_data(n, min_x, max_x, sd):
     '''
     ---------------------
-    Input:
-    Output: 
+    Input: n: no. of values to generate
+           min_x: minimum threshold for x
+           max_x: maximum threshold for x
+           sd: noise distribution standard deviation to 
+                add to y-values
+    Output: x: Generated x values from the uniform distribution
+            y_true: 'True y' values generated deterministically
+                    as a function of x
+            y_obs: Y-values with noise added
     ---------------------
     '''
+    # Generate the x-values
     x = np.random.uniform(min_x, max_x, n)
     
+    # Generate the 'true' y values
     y_true = get_true_function(x)
+
+    # Add noise to the y values
     y_obs = add_noise(y_true, sd = sd)
     
     return x, y_true, y_obs
@@ -85,8 +123,11 @@ def get_data(n, min_x, max_x, sd):
 def plot_data(x, y_obs, path):
     '''
     ------------------------
-    Input: Dataset and degree
-    Output: Assignment data
+    Input: 1) x: data x values
+           2) y_obs: data y values
+           3) path: output path to send the plot
+    Output: Plot of data with true function 
+            superimposed over noisy data points
     ------------------------
     '''
     # Close any figures currently open
@@ -122,8 +163,10 @@ def plot_data(x, y_obs, path):
 def plot_regression_loss(losses, highest_k, path, title, xlab = "Basis dimension", ylab = "Log MSE"):
     '''
     ------------------------
-    Input: Dataset and degree
-    Output: Assignment data
+    Input: Loss values (log MSE in our case) and the highest dimension to
+    iterate to, other misc. plot parameters
+    Output: Plot of regression losses by dimension of basis sent
+    to the specified path
     ------------------------
     '''
     # Close any currently open plots
@@ -140,10 +183,11 @@ def plot_regression_loss(losses, highest_k, path, title, xlab = "Basis dimension
     plt.ylabel(ylab)
     plt.title(title)
     
-    # Get current access
+    # Get current axes and set limits
     axes = plt.gca()
     axes.set_xlim([0,20])
     axes.set_ylim([min(losses) - 0.1, max(losses) + 0.1])
+    axes.xaxis.set_major_locator(mticker.MultipleLocator(1))
 
     # Show plots as a check
     plt.savefig(path)
@@ -152,10 +196,12 @@ def plot_regression_loss(losses, highest_k, path, title, xlab = "Basis dimension
 
 def get_test_mse(x_test, y_test, results, get_basis, k = 18):
     '''
-    ---------------------
-    Input: Parameters needed for data
-    Output: output
-    ---------------------
+    ------------------------
+    Input: X_test
+    iterate to, other misc. plot parameters
+    Output: Plot of regression losses by dimension of basis sent
+    to the specified path
+    ------------------------
     '''
     # Get features
     x_basis = [get_basis(x_test, dim) for dim in range(1, k + 1)]
@@ -227,7 +273,7 @@ def main(basis = 'polynomial',
          path_test_loss_multiple = os.path.join(".", "figs", '1_2_test_loss_100_runs_{}.png')):
     '''
     ---------------------
-    Input: Parameters needed for data
+    This function runs the main loop for the question. 
     Output: output
     ---------------------
     '''
@@ -278,10 +324,10 @@ def main(basis = 'polynomial',
 
         # Store results
         results = execute_train_loss_plots(x, y_obs, start_dim, end_dim, path_train_loss, run_regression, 
-                                           title = "{} Basis Train Error".format(basis.title()))
+                                           title = "{} Basis Train Error for n = 1".format(basis.title()))
         
         ln_mse_test = execute_test_loss_plots(x_test, y_test_obs, results, end_dim, path_test_loss, get_basis, 
-                                              title = "{} Basis Test Error".format(basis.title()))
+                                              title = "{} Basis Test Error for n = 1".format(basis.title()))
 
     # This is for multiple runs to return average MSE
     elif n_runs > 1:
@@ -289,7 +335,7 @@ def main(basis = 'polynomial',
         # Create list to store results
         results = []
         
-        # Call the process for the no. of runs input by the user
+        # Do this for the no. of runs that the user inputs
         for counter in range(n_runs):
             
             # Print progress
@@ -299,7 +345,7 @@ def main(basis = 'polynomial',
             x, y_true, y_obs = get_data(n_train_samples, min_x, max_x, sigma)
             x_test, y_test_true, y_test_obs = get_data(n_test_samples, min_x, max_x, sigma)
 
-            # Store dimensions to iterate over and then run polynomial regressions
+            # Store dimensions to iterate over and then run regressions
             dims = range(start_dim, end_dim + 1)
             results_from_single_run = [run_regression(k, x, y_obs) for k in dims]
 
@@ -316,7 +362,7 @@ def main(basis = 'polynomial',
             results.append(results_from_single_run)
 
         
-        # Store the average
+        # Store the average MSEs as an array in both train and test
         mse = [np.mean(np.array([results[run][degree]['mse'] for run in range(n_runs)])) 
                for degree in range(end_dim)]
         
@@ -328,9 +374,8 @@ def main(basis = 'polynomial',
         ln_mse_test = np.log(mse_test)
 
         # Now make plots 
-        plot_regression_loss(ln_mse, end_dim, path_train_loss_multiple, title = "{} Basis Train Error".format(basis.title()))
-        plot_regression_loss(ln_mse_test, end_dim, path_test_loss_multiple, title = "{} Basis Test Error".format(basis.title()))
-
+        plot_regression_loss(ln_mse, end_dim, path_train_loss_multiple, title = "{} Basis Train Error for n = {} runs".format(basis.title(), n_runs))
+        plot_regression_loss(ln_mse_test, end_dim, path_test_loss_multiple, title = "{} Basis Test Error for n = {} runs".format(basis.title(), n_runs))
 
     # Return results
     return(results)
