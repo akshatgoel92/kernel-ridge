@@ -8,8 +8,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 
-from src.linear_regression import get_polynomial_basis, get_sol, get_predictions 
-from src.linear_regression import get_mse, get_ln_mse, run_polynomial_regression, plot_regression_predictions
+from linear_regression import get_polynomial_basis, get_sol, get_predictions 
+from linear_regression import get_mse, get_ln_mse, run_polynomial_regression, plot_regression_predictions
 
 '''
 ---------------------------
